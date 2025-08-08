@@ -31,7 +31,7 @@ const mockUser = {
 
 export default function HomePage() {
   const [showForm, setShowForm] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
@@ -155,7 +155,7 @@ export default function HomePage() {
             setTasks={setTasks}
           />
 
-          <WeeklyTrendsChart tasks={filteredTasks} />
+          <WeeklyTrendsChart tasks={tasks} />
 
           {/* FOOTER */}
           <footer className="text-center py-3 text-sm text-gray-600 border-t">
@@ -166,14 +166,24 @@ export default function HomePage() {
 
       {/* MOBILE SLIDE-IN SIDEBAR */}
       <Dialog open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <DialogContent className="p-0 max-w-sm w-3/4 left-0 translate-x-0 m-0 bg-white dark:bg-gray-900 border-r shadow-lg"
+        <DialogContent className="p-0 max-w-sm w-3/4 left-0 translate-x-0 m-0 bg-white dark:bg-gray-900 border-r shadow-lg overflow-y-auto "
         >
+          {/* BACKDROP */}
           <motion.div
-            initial={{ x: "-100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "-100%" }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="flex flex-col h-full"
+            className="fixed inset-0"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            onClick={() => setSidebarOpen(false)}
+          />
+          {/* SLIDE-IN SIDEBAR */}
+          <motion.div
+            initial={{ x: "-100%", opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: "-100%", opacity: 0 }}
+            transition={{ type: "tween", duration: 0.3, ease: "easeInOut" }}
+            className="flex flex-col h-full ' top-0 left-0 p-4 "
           >
             <div className="flex items-center justify-between p-4 border-b">
               <DialogTitle className="text-lg font-semibold">Overview</DialogTitle>

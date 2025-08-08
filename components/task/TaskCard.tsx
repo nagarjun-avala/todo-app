@@ -14,11 +14,12 @@ interface Props {
 }
 
 const badgeStyles = {
-    pending: "bg-yellow-100 text-yellow-800",
-    in_progress: "bg-blue-100 text-blue-800",
-    completed: "bg-green-100 text-green-800",
-    archived: "bg-gray-200 text-gray-600",
+    pending: "bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-200",
+    in_progress: "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200",
+    completed: "bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200",
+    archived: "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300",
 };
+
 
 const recurrenceLabels: Record<string, string> = {
     daily: "Daily",
@@ -58,14 +59,21 @@ const TaskCard = ({ task, onEdit, onDelete, onToggleComplete, onToggleRecurrence
             dragConstraints={{ left: 0, right: 0 }}
             onDragEnd={handleDragEnd}
             className={cn(
-                "p-4 mb-2 rounded shadow border cursor-grab touch-pan-y",
+                "p-4 mb-2 rounded shadow border cursor-grab touch-pan-y bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700",
                 task.completed && "opacity-70 line-through"
             )}
+
         >
             <div className="flex justify-between items-start">
                 <div className="space-y-1">
-                    <h4 className="font-medium text-sm text-gray-800">{task.title}</h4>
-                    {task.description && <p className="text-xs text-gray-500">{task.description}</p>}
+                    <h4 className="font-medium text-sm text-gray-800 dark:text-gray-100">
+                        {task.title}
+                    </h4>
+                    {task.description && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {task.description}
+                        </p>
+                    )}
 
                     <div className="flex gap-2 items-center flex-wrap">
                         <span className={cn("text-xs px-2 py-0.5 rounded-full", badgeStyles[task.status])}>
@@ -88,12 +96,13 @@ const TaskCard = ({ task, onEdit, onDelete, onToggleComplete, onToggleRecurrence
                             className={cn(
                                 "text-xs flex items-center gap-1 px-2 py-0.5 rounded-full border",
                                 isOverdue
-                                    ? "bg-red-50 dark:bg-red-800/10 text-red-600 border-red-300"
-                                    : "bg-gray-50 dark:bg-gray-800/10 text-gray-600 border-gray-300"
+                                    ? "bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 border-red-300 dark:border-red-700"
+                                    : "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
                             )}
                         >
                             <CalendarClock size={12} /> {formattedDue}
                         </div>
+
                     </div>
 
                     {showRecurrenceInfo && task.recurrence !== "none" && (
@@ -106,17 +115,26 @@ const TaskCard = ({ task, onEdit, onDelete, onToggleComplete, onToggleRecurrence
                 <div className="flex gap-2">
                     <button
                         onClick={onToggleComplete}
-                        className="text-green-600 hover:text-green-800"
+                        className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300"
                         title="Toggle Complete"
                     >
                         <CheckCircle2 size={16} />
                     </button>
-                    <button onClick={onEdit} className="text-blue-600 hover:text-blue-800" title="Edit">
+                    <button
+                        onClick={onEdit}
+                        className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                        title="Edit"
+                    >
                         <Pencil size={16} />
                     </button>
-                    <button onClick={onDelete} className="text-red-600 hover:text-red-800" title="Delete">
+                    <button
+                        onClick={onDelete}
+                        className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
+                        title="Delete"
+                    >
                         <Trash2 size={16} />
                     </button>
+
                 </div>
             </div>
         </motion.div>
