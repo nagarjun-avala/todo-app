@@ -11,8 +11,9 @@ const requestLogger = (req, res, next) => {
   const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
   const timestamp = new Date().toISOString();
   const method = req.method;
+  const status = req.statusCode || 200; // Default to 200 if status is not set
   const url = req.originalUrl;
-  const log = `[${timestamp}] ${method} ${url} ,IP ${ip}\n`;
+  const log = `[${timestamp}] ${method} ${status} ${url} ,IP ${ip}\n`;
 
   console.log(log); // log to console
   logStream.write(log); // log to file

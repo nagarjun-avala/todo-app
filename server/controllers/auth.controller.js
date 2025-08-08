@@ -76,14 +76,14 @@ const authCtrl = {
       user.lastLogin = Date.now();
       await user.save();
       // Generate a JWT token
-      res.cookie("token", generateRefreshToken(newUser), {
+      res.cookie("token", generateRefreshToken(user), {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production", // Set to true in production
         sameSite: "strict", // Adjust as necessary
         path: "/api/auth/refresh",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
-      const accessToken = generateAccessToken(newUser);
+      const accessToken = generateAccessToken(user);
       delete user._doc.password; // Remove password from response
       res.status(200).json({
         success: true,
@@ -117,6 +117,16 @@ const authCtrl = {
         error: error.message,
       });
     }
+  },
+
+  refresh: async (req, res) => {
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/api/auth/refresh",
+    });
+    res.status(200).json({ message: "Logged out" });
   },
 };
 
