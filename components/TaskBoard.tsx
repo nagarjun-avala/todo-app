@@ -1,8 +1,7 @@
-import React, { useMemo } from "react";
-import { Task, StatusType } from "@/lib/types";
-import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
-import TaskCard from "@/components/task/TaskCard";
+import { StatusType, Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import React, { useMemo, useState } from "react";
+import TaskCard from "./task/TaskCard";
 
 const STATUS_COLUMNS: {
     key: StatusType;
@@ -31,70 +30,79 @@ export default function TaskBoard({
     onDeleteTask,
     onToggleComplete,
 }: Props) {
-    const handleDragEnd = (result: DropResult) => {
-        const { source, destination, draggableId } = result;
-        if (!destination || source.droppableId === destination.droppableId) return;
+    const [draggedItem, setDraggedItem] = useState<{ columnId: string; task: Task } | null>(null);
 
-        setTasks((prev) =>
-            prev.map((task) =>
-                task.id === draggableId
-                    ? { ...task, status: destination.droppableId as StatusType }
-                    : task
-            )
-        );
+    const columns = useMemo(
+        () =>
+            STATUS_COLUMNS.map(({ key, label, bgLight, bgDark }) => ({
+                key,
+                name: label,
+                bgLight,
+                bgDark,
+                items: tasks.filter((task) => task.status === key),
+            })),
+        [tasks]
+    );
+
+    const handleDragStart = (columnId: string, task: Task) => {
+        setDraggedItem({ columnId, task });
     };
 
-    // Pre-group tasks for performance
-    const groupedTasks = useMemo(() => {
-        return STATUS_COLUMNS.reduce((acc, { key }) => {
-            acc[key] = tasks.filter((task) => task.status === key);
-            return acc;
-        }, {} as Record<StatusType, Task[]>);
-    }, [tasks]);
+    const handleDrop = (e: React.DragEvent, targetColumnId: string) => {
+        e.preventDefault();
+        if (!draggedItem || draggedItem.columnId === targetColumnId) return;
+
+        setTasks((prevTasks) =>
+            prevTasks.map((t) =>
+                t.id === draggedItem.task.id ? { ...t, status: targetColumnId as StatusType } : t
+            )
+        );
+        setDraggedItem(null);
+    };
 
     return (
-        <DragDropContext onDragEnd={handleDragEnd}>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {STATUS_COLUMNS.map(({ key, label, bgLight, bgDark }) => (
-                    <Droppable key={key} droppableId={key}>
-                        {(provided) => (
-                            <div
-                                ref={provided.innerRef}
-                                {...provided.droppableProps}
-                                className={cn(
-                                    "rounded p-3 min-h-[200px] border transition-colors",
-                                    "border-gray-200 dark:border-gray-700",
-                                    bgLight,
-                                    bgDark
-                                )}
-                            >
-                                <h3 className="font-semibold capitalize mb-3 text-gray-800 dark:text-gray-100">
-                                    {label} - {groupedTasks[key].length}
-                                </h3>
-                                {groupedTasks[key].map((task, index) => (
-                                    <Draggable key={task.id} draggableId={task.id} index={index}>
-                                        {(provided) => (
-                                            <div
-                                                ref={provided.innerRef}
-                                                {...provided.draggableProps}
-                                                {...provided.dragHandleProps}
-                                            >
-                                                <TaskCard
-                                                    task={task}
-                                                    onEdit={() => onEditTask(task)}
-                                                    onDelete={() => onDeleteTask(task.id)}
-                                                    onToggleComplete={() => onToggleComplete(task.id)}
-                                                />
-                                            </div>
-                                        )}
-                                    </Draggable>
-                                ))}
-                                {provided.placeholder}
-                            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+            {columns.map(({ key, name, bgLight, bgDark, items }) => {
+                const isEmpty = items.length === 0;
+                return (
+                    <div
+                        key={key}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => handleDrop(e, key)}
+                        className={cn(
+                            "rounded p-3 border transition-all flex flex-col items-center justify-start min-h-[200px] w-full",
+                            "border-gray-200 dark:border-gray-700",
+                            bgLight,
+                            bgDark,
+                            isEmpty ? "max-w-[4rem]" : "flex-1"
                         )}
-                    </Droppable>
-                ))}
-            </div>
-        </DragDropContext>
+                    >
+                        <h3
+                            className={cn(
+                                "font-semibold mb-3 text-gray-800 dark:text-gray-100",
+                                isEmpty && "[writing-mode:vertical-rl] rotate-180 whitespace-nowrap"
+                            )}
+                        >
+                            {name} - {items.length}
+                        </h3>
+                        {items.map((task) => (
+                            <div
+                                key={task.id}
+                                draggable
+                                onDragStart={() => handleDragStart(key, task)}
+                                className="rounded"
+                            >
+                                <TaskCard
+                                    task={task}
+                                    onEdit={() => onEditTask(task)}
+                                    onDelete={() => onDeleteTask(task.id)}
+                                    onToggleComplete={() => onToggleComplete(task.id)}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                );
+            })}
+        </div>
     );
 }
