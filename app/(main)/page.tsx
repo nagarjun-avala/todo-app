@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Task } from "@/lib/types";
 import TaskForm from "@/components/task/TaskForm";
 import { generateMockTasks } from "@/lib/mockTasks";
@@ -8,8 +8,13 @@ import TaskBoard from "@/components/TaskBoard";
 import { generateNextRecurringTask } from "@/lib/recurrence";
 import TaskSummaryAnalytics from "@/components/task/TaskSummaryAnalytics";
 import WeeklyTrendsChart from "@/components/task/WeeklyTrendsChart";
+import ThemeModeToggle from "@/components/ThemeModeToggle";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Menu, Plus } from "lucide-react";
+import TaskCalendar from "@/components/task/TaskCalendar";
+import { format } from "date-fns";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { motion } from 'framer-motion';
 
 const isDev = process.env.NODE_ENV !== "production";
 
@@ -26,8 +31,20 @@ const mockUser = {
 
 export default function HomePage() {
   const [showForm, setShowForm] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+
+  const filteredTasks = useMemo(() => {
+    if (!selectedDate) return tasks;
+    return tasks.filter(
+      (task) =>
+        task.dueDate &&
+        format(new Date(task.dueDate), "yyyy-MM-dd") ===
+        format(selectedDate, "yyyy-MM-dd")
+    )
+  }, [tasks, selectedDate]);
 
   useEffect(() => {
     if (isDev) {
@@ -37,14 +54,12 @@ export default function HomePage() {
 
   useEffect(() => {
     const updatedTasks = [...tasks];
-
     tasks.forEach((task) => {
       const nextRecurring = generateNextRecurringTask(task);
       if (nextRecurring) {
         updatedTasks.push(nextRecurring);
       }
     });
-
     if (updatedTasks.length !== tasks.length) {
       setTasks(updatedTasks);
     }
@@ -89,37 +104,48 @@ export default function HomePage() {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <header className="mb-6 text-center">
-        <h1 className="text-4xl font-bold text-blue-600">📋 To-Do List App</h1>
-        <p className="text-gray-500">Organize your chaos. One task at a time.</p>
+    <div className="h-screen flex flex-col">
+      {/* HEADER */}
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 shadow bg-white dark:bg-gray-900 px-6 py-4">
+        <div className="flex items-center gap-2">
+          {/* Mobile sidebar toggle */}
+          <button
+            className="lg:hidden p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+            onClick={() => setSidebarOpen(true)}
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <span className="text-2xl font-bold">📋 To-Do Dashboard</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            variant={"outline"}
+            onClick={() => {
+              setTaskToEdit(null);
+              setShowForm(true);
+            }}
+          >
+            <Plus /> Add Task
+          </Button>
+          <span className="text-sm text-gray-600 dark:text-gray-300">
+            Welcome, {mockUser.fullName}
+          </span>
+          <ThemeModeToggle />
+        </div>
       </header>
 
-      <div className="flex justify-between items-center mb-4">
-        <Button
-          onClick={() => {
-            setTaskToEdit(null);
-            setShowForm(true);
-          }}
-          variant={"outline"}
-          className="shadow cursor-pointer"
-        >
-          <Plus />Add Task
-        </Button>
-      </div>
+      {/* MAIN CONTENT */}
+      <main className="flex flex-1 flex-col lg:flex-row overflow-hidden">
+        {/* LEFT SIDEBAR - desktop only */}
+        <aside className="hidden lg:block lg:w-1/4 xl:w-1/5 border-r overflow-y-auto p-4 sticky space-y-4">
+          <TaskSummaryAnalytics tasks={filteredTasks} />
+          <TaskCalendar tasks={tasks} onDateSelect={setSelectedDate} />
+        </aside>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Sidebar (sticky on scroll) */}
-        <div className="space-y-6 lg:col-span-1">
-          <div className="sticky top-4">
-            <TaskSummaryAnalytics tasks={tasks} />
-          </div>
-        </div>
-
-        {/* Task Board */}
-        <div className="lg:col-span-2">
+        {/* RIGHT CONTENT */}
+        <div className="flex-1 px-4 sm:px-6 py-4 space-y-6 overflow-y-auto">
           <TaskBoard
-            tasks={tasks}
+            tasks={filteredTasks}
             onEditTask={(task) => {
               setTaskToEdit(task);
               setShowForm(true);
@@ -128,11 +154,40 @@ export default function HomePage() {
             onToggleComplete={onToggleComplete}
             setTasks={setTasks}
           />
-          <WeeklyTrendsChart tasks={tasks} />
-        </div>
-      </div>
 
-      {/* Modal Form */}
+          <WeeklyTrendsChart tasks={filteredTasks} />
+
+          {/* FOOTER */}
+          <footer className="text-center py-3 text-sm text-gray-600 border-t">
+            &copy; {new Date().getFullYear()} To-Do Dashboard. All rights reserved.
+          </footer>
+        </div>
+      </main>
+
+      {/* MOBILE SLIDE-IN SIDEBAR */}
+      <Dialog open={sidebarOpen} onOpenChange={setSidebarOpen}>
+        <DialogContent className="p-0 max-w-sm w-3/4 left-0 translate-x-0 m-0 bg-white dark:bg-gray-900 border-r shadow-lg"
+        >
+          <motion.div
+            initial={{ x: "-100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "-100%" }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="flex flex-col h-full"
+          >
+            <div className="flex items-center justify-between p-4 border-b">
+              <DialogTitle className="text-lg font-semibold">Overview</DialogTitle>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <TaskSummaryAnalytics tasks={filteredTasks} />
+              <TaskCalendar tasks={tasks} onDateSelect={setSelectedDate} />
+            </div>
+          </motion.div>
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL FORM */}
       {showForm && (
         <TaskForm
           setShowForm={setShowForm}

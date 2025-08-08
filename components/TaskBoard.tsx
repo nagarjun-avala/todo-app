@@ -41,7 +41,7 @@ const TaskBoard = ({ tasks, setTasks, onEditTask, onDeleteTask, onToggleComplete
                             <div
                                 ref={provided.innerRef}
                                 {...provided.droppableProps}
-                                className="bg-gray-100 rounded p-2 min-h-[200px]"
+                                className="bg-gray-100/50 dark:bg-gray-900/50 rounded p-2 min-h-[200px]"
                             >
                                 <h3 className="font-bold capitalize mb-2">{statusKey.replace("_", " ")}</h3>
                                 {tasks

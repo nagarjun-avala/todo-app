@@ -58,7 +58,7 @@ const TaskCard = ({ task, onEdit, onDelete, onToggleComplete, onToggleRecurrence
             dragConstraints={{ left: 0, right: 0 }}
             onDragEnd={handleDragEnd}
             className={cn(
-                "p-4 mb-2 rounded bg-white shadow border cursor-grab touch-pan-y",
+                "p-4 mb-2 rounded shadow border cursor-grab touch-pan-y",
                 task.completed && "opacity-70 line-through"
             )}
         >
@@ -88,8 +88,8 @@ const TaskCard = ({ task, onEdit, onDelete, onToggleComplete, onToggleRecurrence
                             className={cn(
                                 "text-xs flex items-center gap-1 px-2 py-0.5 rounded-full border",
                                 isOverdue
-                                    ? "bg-red-50 text-red-600 border-red-300"
-                                    : "bg-gray-50 text-gray-600 border-gray-300"
+                                    ? "bg-red-50 dark:bg-red-800/10 text-red-600 border-red-300"
+                                    : "bg-gray-50 dark:bg-gray-800/10 text-gray-600 border-gray-300"
                             )}
                         >
                             <CalendarClock size={12} /> {formattedDue}

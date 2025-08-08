@@ -53,7 +53,6 @@ const TaskForm = ({ setShowForm, onAddTask, initialTask }: Props) => {
         });
     };
 
-
     return (
         <div className="fixed inset-0 bg-black/80 bg-opacity-50 flex justify-center items-center z-50">
             <form onSubmit={handleSubmit(onSubmit)}>

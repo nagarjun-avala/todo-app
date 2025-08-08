@@ -1,15 +1,14 @@
 import { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { CalendarCheck2, Repeat, ClipboardList, AlarmClock } from "lucide-react";
-import { JSX, useState } from "react";
-import TaskCalendar from "./TaskCalendar";
+import { JSX } from "react";
+import { Card } from "../ui/card";
 
 interface Props {
     tasks: Task[];
 }
 
 export default function TaskSummaryAnalytics({ tasks }: Props) {
-    const [showCalendar, setShowCalendar] = useState(true);
 
     const total = tasks.length;
     const completed = tasks.filter((t) => t.completed).length;
@@ -22,35 +21,55 @@ export default function TaskSummaryAnalytics({ tasks }: Props) {
         icon: JSX.Element,
         label: string,
         value: number,
-        color: string
+        bgColor: string,
     ) => (
-        <div className={cn("flex items-center gap-3 p-4 rounded shadow-sm", color)}>
-            {icon}
-            <div>
-                <p className="text-sm text-gray-600">{label}</p>
-                <p className="text-lg font-bold">{value}</p>
+        <Card
+            className={cn("flex flex-row items-center justify-between gap-3 py-2 px-3 rounded shadow-sm border-none text-gray-700 dark:text-gray-200", bgColor)}
+        >
+            <div className="flex flex-row gap-2 items-center">
+                {icon}
+                <p className="text-sm">{label}</p>
             </div>
-        </div>
+            <p className="text-lg font-bold text-gray-800 dark:text-white">
+                {value}
+            </p>
+        </Card>
     );
 
     return (
-        <aside className="w-full lg:w-1/3 space-y-4 sticky top-4 self-start">
-            <section className="grid grid-cols-1 gap-4">
-                {summaryCard(<ClipboardList size={20} />, "Total Tasks", total, "bg-gray-50")}
-                {summaryCard(<AlarmClock size={20} />, "Overdue", overdue, "bg-red-50")}
-                {summaryCard(<Repeat size={20} />, "Recurring Tasks", recurring, "bg-purple-50")}
-                {summaryCard(<CalendarCheck2 size={20} />, "Completed", completed, "bg-green-50")}
-            </section>
-
-            <div className="mt-4">
-                <button
-                    onClick={() => setShowCalendar((prev) => !prev)}
-                    className="text-sm text-blue-600 hover:underline mb-2"
-                >
-                    {showCalendar ? "Hide Calendar" : "Show Calendar"}
-                </button>
-                {showCalendar && <TaskCalendar tasks={tasks} />}
-            </div>
-        </aside>
+        <section className="grid grid-cols-1 gap-2" >
+            {
+                summaryCard(
+                    <ClipboardList size={20} />,
+                    "Total Tasks",
+                    total,
+                    "bg-gray-50 dark:bg-gray-800",
+                )
+            }
+            {
+                summaryCard(
+                    <AlarmClock size={20} />,
+                    "Overdue",
+                    overdue,
+                    "bg-red-50 dark:bg-red-900/30",
+                )
+            }
+            {
+                summaryCard(
+                    <Repeat size={20} />,
+                    "Recurring Tasks",
+                    recurring,
+                    "bg-purple-50 dark:bg-purple-900/30",
+                )
+            }
+            {
+                summaryCard(
+                    <CalendarCheck2 size={20} />,
+                    "Completed",
+                    completed,
+                    "bg-green-50 dark:bg-green-900/30",
+                )
+            }
+        </section >
     );
 }
