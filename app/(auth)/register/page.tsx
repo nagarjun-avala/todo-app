@@ -1,10 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { useAuth } from "@/context/AuthContext";
 
 export default function RegisterPage() {
-  const { register } = useAuth();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -14,7 +12,7 @@ export default function RegisterPage() {
     e.preventDefault();
     setError(null);
     try {
-      await register(username, email, password);
+      console.log({ username, email, password })
     } catch (err: unknown) {
       if (
         err &&
@@ -29,7 +27,7 @@ export default function RegisterPage() {
       ) {
         setError(
           (err.response as { data: { message?: string } }).data.message ||
-            "Registration failed"
+          "Registration failed"
         );
       } else {
         setError("Registration failed");
