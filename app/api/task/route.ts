@@ -40,9 +40,12 @@ export async function GET() {
 // ✅ POST: Add a new task
 export async function POST(req: NextRequest) {
     try {
-        const body = await req.json();
+        const { dueDate, ...body } = await req.json();
 
+        console.log("Passed body initialization")
         const parsed = taskSchema.safeParse(body);
+
+        console.log("Passed schema validation")
 
         if (!parsed.success) {
             return NextResponse.json(
@@ -63,7 +66,6 @@ export async function POST(req: NextRequest) {
             status,
             priority,
             category,
-            dueDate,
             recurrence,
         }: Task = body;
 
@@ -86,11 +88,7 @@ export async function POST(req: NextRequest) {
             },
         });
 
-        const res = NextResponse.json({
-            success: true,
-            message: "Task created successfully",
-            task: newTask
-        }, { status: 201 })
+        const res = NextResponse.json(newTask, { status: 201 })
 
         return res
     } catch (error) {
