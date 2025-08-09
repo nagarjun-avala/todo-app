@@ -1,10 +1,11 @@
-import { StatusType, Task } from "@/lib/types";
+
 import { cn } from "@/lib/utils";
 import React, { useMemo, useState } from "react";
 import TaskCard from "./task/TaskCard";
+import { Status, Task } from "@prisma/client";
 
 const STATUS_COLUMNS: {
-    key: StatusType;
+    key: Status;
     label: string;
     bgLight: string;
     bgDark: string;
@@ -20,7 +21,7 @@ type Props = {
     setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
     onEditTask: (task: Task) => void;
     onDeleteTask: (id: string) => void;
-    onToggleComplete: (id: string) => void;
+    onToggleComplete: (id: string, status: string) => void;
 };
 
 export default function TaskBoard({
@@ -54,7 +55,7 @@ export default function TaskBoard({
 
         setTasks((prevTasks) =>
             prevTasks.map((t) =>
-                t.id === draggedItem.task.id ? { ...t, status: targetColumnId as StatusType } : t
+                t.id === draggedItem.task.id ? { ...t, status: targetColumnId as Status } : t
             )
         );
         setDraggedItem(null);
@@ -96,7 +97,7 @@ export default function TaskBoard({
                                     task={task}
                                     onEdit={() => onEditTask(task)}
                                     onDelete={() => onDeleteTask(task.id)}
-                                    onToggleComplete={() => onToggleComplete(task.id)}
+                                    onToggleComplete={(status: string) => onToggleComplete(task.id, status)}
                                 />
                             </div>
                         ))}

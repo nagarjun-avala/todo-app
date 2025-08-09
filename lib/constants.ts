@@ -1,6 +1,6 @@
-import { PriorityType, StatusType } from "./types";
+import { Priority, Recurrence, Status } from "@prisma/client";
 
-export const recurrenceOptions = ["none", "daily", "weekly", "monthly"] as const;
+export const recurrenceOptions: Recurrence[] = ["none", "daily", "weekly", "monthly"] as const;
 
-export const statuses: StatusType[] = ["pending", "in_progress", "completed", "archived"];
-export const priorities: PriorityType[] = ["low", "medium", "high", "urgent"];
+export const statusOptions: Status[] = ["pending", "in_progress", "completed", "archived"];
+export const priorityOptions: Priority[] = ["low", "medium", "high", "urgent"];

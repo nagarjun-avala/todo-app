@@ -1,25 +1,19 @@
-import { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { CheckCircle2, Trash2, Pencil, Repeat, CalendarClock } from "lucide-react";
 import { motion, useAnimation, PanInfo } from "framer-motion";
 import { useEffect, useState } from "react";
-import { format, parseISO, isPast } from "date-fns";
+import { format, isPast } from "date-fns";
+import { Task } from "@prisma/client";
+import { TaskBadge } from "./TaskBadge";
+import { TaskDueDate } from "./TaskDueDate";
 
 interface Props {
     task: Task;
     onEdit: () => void;
     onDelete: () => void;
-    onToggleComplete: () => void;
+    onToggleComplete: (status: string) => void;
     onToggleRecurrencePreview?: () => void; // Optional callback
 }
-
-const badgeStyles = {
-    pending: "bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-200",
-    in_progress: "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200",
-    completed: "bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200",
-    archived: "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300",
-};
-
 
 const recurrenceLabels: Record<string, string> = {
     daily: "Daily",
@@ -33,7 +27,7 @@ const TaskCard = ({ task, onEdit, onDelete, onToggleComplete, onToggleRecurrence
 
     const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
         if (info.offset.x > 100) {
-            onToggleComplete();
+            onToggleComplete("complted");
         } else if (info.offset.x < -100) {
             onDelete();
         } else {
@@ -45,8 +39,8 @@ const TaskCard = ({ task, onEdit, onDelete, onToggleComplete, onToggleRecurrence
         controls.start({ x: 0, opacity: 1, y: 0 });
     }, [controls, task]);
 
-    const isOverdue = task.dueDate ? isPast(parseISO(task.dueDate)) : false;
-    const formattedDue = task.dueDate ? format(parseISO(task.dueDate), "MMM d, yyyy") : "No due date";
+    const isOverdue = task.dueDate ? isPast(task.dueDate) : false;
+    const formattedDue = task.dueDate ? format(task.dueDate, "MMM d, yyyy") : "No due date";
 
     return (
         <motion.div
@@ -60,7 +54,7 @@ const TaskCard = ({ task, onEdit, onDelete, onToggleComplete, onToggleRecurrence
             onDragEnd={handleDragEnd}
             className={cn(
                 "p-4 mb-2 rounded shadow border cursor-grab touch-pan-y bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700",
-                task.completed && "opacity-70 line-through"
+                task.status === "completed" && "opacity-70 line-through"
             )}
 
         >
@@ -76,9 +70,8 @@ const TaskCard = ({ task, onEdit, onDelete, onToggleComplete, onToggleRecurrence
                     )}
 
                     <div className="flex gap-2 items-center flex-wrap">
-                        <span className={cn("text-xs px-2 py-0.5 rounded-full", badgeStyles[task.status])}>
-                            {task.status.replace("_", " ")}
-                        </span>
+                        {/* Task status badge */}
+                        <TaskBadge status={task.status} />
 
                         {task.recurrence && task.recurrence !== "none" && (
                             <button
@@ -100,7 +93,7 @@ const TaskCard = ({ task, onEdit, onDelete, onToggleComplete, onToggleRecurrence
                                     : "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
                             )}
                         >
-                            <CalendarClock size={12} /> {formattedDue}
+                            <CalendarClock size={12} /> <TaskDueDate dueDate={formattedDue} />
                         </div>
 
                     </div>
@@ -114,7 +107,7 @@ const TaskCard = ({ task, onEdit, onDelete, onToggleComplete, onToggleRecurrence
 
                 <div className="flex gap-2">
                     <button
-                        onClick={onToggleComplete}
+                        onClick={() => onToggleComplete("completed")}
                         className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300"
                         title="Toggle Complete"
                     >

@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Task } from "@/lib/types";
 import TaskForm from "@/components/task/TaskForm";
-import { generateMockTasks } from "@/lib/mockTasks";
 import TaskBoard from "@/components/TaskBoard";
 import { generateNextRecurringTask } from "@/lib/recurrence";
 import TaskSummaryAnalytics from "@/components/task/TaskSummaryAnalytics";
@@ -15,8 +13,10 @@ import TaskCalendar from "@/components/task/TaskCalendar";
 import { format } from "date-fns";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { motion } from 'framer-motion';
+import { Task } from "@prisma/client";
+import { getTasks } from "@/utils/controller";
+import { toast } from "sonner";
 
-const isDev = process.env.NODE_ENV !== "production";
 
 const mockUser = {
   id: "mock-user-id",
@@ -47,9 +47,17 @@ export default function HomePage() {
   }, [tasks, selectedDate]);
 
   useEffect(() => {
-    if (isDev) {
-      setTasks(generateMockTasks(20));
-    }
+    const fetchData = async () => {
+      try {
+        const res = await getTasks();
+        setTasks(res);
+      } catch {
+        toast.error("Failed to fetch tasks")
+        // console.error("Failed to fetch tasks:", error);
+      }
+    };
+
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -70,7 +78,7 @@ export default function HomePage() {
       setTasks((prev) =>
         prev.map((task) =>
           task.id === taskToEdit.id
-            ? { ...task, ...taskData, updatedAt: new Date().toISOString() }
+            ? { ...task, ...taskData, updatedAt: new Date() }
             : task
         )
       );
@@ -79,8 +87,8 @@ export default function HomePage() {
       const newTask: Task = {
         ...taskData,
         id: crypto.randomUUID(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
         completed: taskData.status === "completed",
         deleted: false,
         userId: mockUser.id,
@@ -95,10 +103,10 @@ export default function HomePage() {
     setTasks((prev) => prev.filter((task) => task.id !== id));
   };
 
-  const onToggleComplete = (id: string) => {
+  const onToggleComplete = (id: string, status: string) => {
     setTasks((prev) =>
       prev.map((task) =>
-        task.id === id ? { ...task, completed: !task.completed } : task
+        task.id === id ? { ...task, completed: status } : task
       )
     );
   };
@@ -144,18 +152,35 @@ export default function HomePage() {
 
         {/* RIGHT CONTENT */}
         <div className="flex-1 px-4 sm:px-6 py-4 space-y-6 overflow-y-auto">
-          <TaskBoard
-            tasks={filteredTasks}
-            onEditTask={(task) => {
-              setTaskToEdit(task);
-              setShowForm(true);
-            }}
-            onDeleteTask={onDeleteTask}
-            onToggleComplete={onToggleComplete}
-            setTasks={setTasks}
-          />
-
-          <WeeklyTrendsChart tasks={tasks} />
+          {filteredTasks.length === 0 ? (
+            <div className="w-full flex items-center flex-col gap-5 justify-center min-h-[570px]">
+              {tasks.length === 0 ? "No Task Available" : "No Task for today"}
+              <Button
+                variant={"outline"}
+                onClick={() => {
+                  setTaskToEdit(null);
+                  setShowForm(true);
+                }}
+              >
+                <Plus /> Add Task
+              </Button>
+            </div>
+          ) :
+            (
+              <>
+                <TaskBoard
+                  tasks={filteredTasks}
+                  onEditTask={(task) => {
+                    setTaskToEdit(task);
+                    setShowForm(true);
+                  }}
+                  onDeleteTask={onDeleteTask}
+                  onToggleComplete={onToggleComplete}
+                  setTasks={setTasks}
+                />
+                <WeeklyTrendsChart tasks={tasks} />
+              </>
+            )}
 
           {/* FOOTER */}
           <footer className="text-center py-3 text-sm text-gray-600 border-t">

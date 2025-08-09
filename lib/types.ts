@@ -1,34 +1,14 @@
-export type PriorityType = "low" | "medium" | "high" | "urgent"
-
-export type StatusType = "pending" | "in_progress" | "completed" | "archived"
-
-export type Recurrence = "none" | "daily" | "weekly" | "monthly";
-
-export interface User {
-    id: string
-    fullName: string
-    username: string
-    email: string
-    password: string
-    isActive: boolean
-    lastLogin?: string
-    createdAt: string
-    updatedAt: string
-}
-
-
-export interface Task {
+import { Task, User } from "@prisma/client";
+import { JWTPayload } from "jose";
+// Authentication Types
+export interface SessionPayload extends JWTPayload {
     id: string;
-    title: string;
-    description?: string;
-    completed: boolean;
-    status: StatusType;
-    priority: PriorityType;
-    dueDate?: string;
-    deleted: boolean;
-    createdAt: string;
-    updatedAt: string;
-    userId: string;
-    user: User;
-    recurrence: Recurrence;
-}
+    email: string;
+};
+
+//  Input Types for CRUD
+export type CreateUserInput = Omit<User, "id" | "createdAt" | "updatedAt" | "Task">;
+export type UpdateUserInput = Partial<CreateUserInput>;
+
+export type CreateTaskInput = Omit<Task, "id" | "createdAt" | "updatedAt" | "User">;
+export type UpdateTaskInput = Partial<CreateTaskInput>;

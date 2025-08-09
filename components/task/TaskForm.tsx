@@ -6,7 +6,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Input } from "@/components/ui/input";
 import { TaskDueDatePicker } from "@/components/TaskDueDatePicker";
 import { Task } from "@/lib/types";
-import { taskFormSchema, TaskFormValues } from "@/lib/zodSchems";
+import { taskSchema, TaskFormValues } from "@/lib/zodSchems";
 
 interface Props {
     setShowForm: (show: boolean) => void;
@@ -23,14 +23,7 @@ const TaskForm = ({ setShowForm, onAddTask, initialTask }: Props) => {
         watch,
         formState: { errors },
     } = useForm<TaskFormValues>({
-        resolver: zodResolver(taskFormSchema),
-        defaultValues: {
-            title: "",
-            description: "",
-            status: "pending",
-            priority: "medium",
-            dueDate: undefined,
-        },
+        resolver: zodResolver(taskSchema),
     });
 
     useEffect(() => {
@@ -38,8 +31,9 @@ const TaskForm = ({ setShowForm, onAddTask, initialTask }: Props) => {
             reset({
                 title: initialTask.title || "",
                 description: initialTask.description || "",
-                status: initialTask.status || "pending",
                 priority: initialTask.priority || "medium",
+                status: initialTask.status || "pending",
+                recurrence: initialTask.recurrence || "none",
                 dueDate: initialTask.dueDate ? new Date(initialTask.dueDate) : undefined,
             });
 
