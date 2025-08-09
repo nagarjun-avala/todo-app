@@ -1,15 +1,15 @@
+// lib/zodSchems.ts
 import { z } from "zod";
-import { priorityOptions, recurrenceOptions, statusOptions } from "./constants";
 
 export const taskSchema = z.object({
+    id: z.string().optional(),
     title: z.string().min(1, "Title is required"),
     description: z.string().optional(),
-    priority: z.enum(priorityOptions).default("medium"),   // Prisma enum
-    status: z.enum(statusOptions).default("pending"),       // Prisma enum
-    recurrence: z.enum(recurrenceOptions).default("none"), // Prisma enum
-    dueDate: z
-        .union([z.string(), z.date()]).optional().default(undefined)
-        .transform((val) => (typeof val === "string" ? new Date(val) : val)),
+    priority: z.enum(["low", "medium", "high", "urgent"]),
+    status: z.enum(["pending", "in_progress", "completed", "archived"]),
+    recurrence: z.enum(["none", "daily", "weekly", "monthly"]),
+    // ✅ allow null or undefined, default to null
+    dueDate: z.string().optional(), // string | null
 });
 
 export const loginSchema = z.object({
@@ -40,7 +40,7 @@ export const userSchema = z.object({
 });
 
 // 🔹 Types
-export type LoginFormValues = z.infer<typeof loginSchema>;
-export type TaskFormValues = z.infer<typeof taskSchema>;
-export type RegisterFormValues = z.infer<typeof registerSchema>;
-export type UserType = z.infer<typeof userSchema>;
+export type LoginSchemaType = z.infer<typeof loginSchema>;
+export type TaskSchemaType = z.infer<typeof taskSchema>;
+export type RegisterSchemaType = z.infer<typeof registerSchema>;
+export type userSchemaType = z.infer<typeof userSchema>;

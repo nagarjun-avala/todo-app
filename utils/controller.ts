@@ -1,5 +1,5 @@
 import { Task } from "@prisma/client";
-import { getData, postData } from "./api";
+import { getData, patchData, postData } from "./api";
 
 /**
  * Logs out the current user.
@@ -76,3 +76,33 @@ export const getTasks = async () => {
         throw new Error("Falied to fetch data")
     }
 }
+
+
+/**
+ * Creates or updates a task based on the presence of an `id`.
+ *
+ * - If `id` exists ➜ updates the existing task (PATCH).
+ * - If no `id` ➜ creates a new task (POST).
+ *
+ * @param task The task data to create or update.
+ * @returns The created or updated task object.
+ */
+export const createOrUpdateTask = async (
+    task: Partial<Task>
+): Promise<Task> => {
+    try {
+        if (task.id && task.id !== "") {
+            // ✏️ Update existing task
+            const res = await patchData(`/api/task/${task.id}`, task);
+            return res as Task;
+        } else {
+            // ➕ Create new task
+            const res = await postData("/api/task", task);
+            return res as Task;
+        }
+    } catch {
+        throw new Error(
+            task.id ? "Failed to update task" : "Failed to create task"
+        );
+    }
+};

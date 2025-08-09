@@ -1,104 +1,232 @@
-import React, { useEffect } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { TaskDueDatePicker } from "@/components/TaskDueDatePicker";
-import { Task } from "@/lib/types";
-import { taskSchema, TaskFormValues } from "@/lib/zodSchems";
+import { taskSchema, TaskSchemaType } from "@/lib/zodSchems";
+import { Task } from "@prisma/client";
+import { Textarea } from "../ui/textarea";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "../ui/select";
+import { recurrenceOptions, statusOptions } from "@/lib/constants";
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from "../ui/form";
+import { Loader2 } from "lucide-react";
+import { createOrUpdateTask } from "@/utils/controller";
+import { toast } from "sonner";
 
 interface Props {
-    setShowForm: (show: boolean) => void;
+    setIsDialogOpen: (show: boolean) => void;
     onAddTask: (data: Partial<Task>) => void;
     initialTask?: Partial<Task>;
 }
 
-const TaskForm = ({ setShowForm, onAddTask, initialTask }: Props) => {
-    const {
-        register,
-        handleSubmit,
-        reset,
-        setValue,
-        watch,
-        formState: { errors },
-    } = useForm<TaskFormValues>({
+const TaskForm = ({ setIsDialogOpen, onAddTask, initialTask }: Props) => {
+    const [loading, setLoading] = useState(false);
+
+    const form = useForm<TaskSchemaType>({
         resolver: zodResolver(taskSchema),
+        defaultValues: {
+            title: initialTask?.title || "",
+            description: initialTask?.description || "",
+            priority: initialTask?.priority || "medium",
+            status: initialTask?.status || "pending",
+            recurrence: initialTask?.recurrence || "none",
+            dueDate: initialTask?.dueDate
+                ? new Date(initialTask?.dueDate).toISOString().split("T")[0] // ✅ Date → "YYYY-MM-DD"
+                : undefined, // matches form type
+        },
     });
 
-    useEffect(() => {
-        if (initialTask) {
-            reset({
-                title: initialTask.title || "",
-                description: initialTask.description || "",
-                priority: initialTask.priority || "medium",
-                status: initialTask.status || "pending",
-                recurrence: initialTask.recurrence || "none",
-                dueDate: initialTask.dueDate ? new Date(initialTask.dueDate) : undefined,
+    const onSubmit = async (data: TaskSchemaType) => {
+        try {
+            setLoading(true);
+            const safeDueDate = data.dueDate ? new Date(data.dueDate) : null;
+            const res = await createOrUpdateTask({
+                ...data,
+                dueDate: safeDueDate,
             });
-
+            onAddTask(res);
+            toast.success(`Task ${initialTask ? "updated" : "created"} successfully`);
+            form.reset();
+        } catch (error) {
+            console.log(error);
+        } finally {
+            setLoading(false);
         }
-    }, [initialTask, reset]);
-
-    const onSubmit = (data: TaskFormValues) => {
-        onAddTask({
-            ...data,
-            dueDate: data.dueDate?.toISOString(), // 💡 Convert Date → string
-        });
     };
 
     return (
-        <div className="fixed inset-0 bg-black/80 bg-opacity-50 flex justify-center items-center z-50">
-            <form onSubmit={handleSubmit(onSubmit)}>
-                <Card className="w-full max-w-md">
-                    <CardHeader>
-                        <CardTitle>{initialTask ? "Edit Task" : "Add Task"}</CardTitle>
-                    </CardHeader>
+        <Form {...form}>
+            <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
+                {/* Title */}
+                <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Title</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Title" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                {/* Description */}
+                <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Description</FormLabel>
+                            <FormControl>
+                                <Textarea
+                                    placeholder="Type your Description here."
+                                    id="description"
+                                    {...field}
+                                // className="w-full p-2 border rounded"
+                                />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <div className="grid gap-4 sm:grid-cols-3">
+                    {/* Priority */}
+                    <FormField
+                        control={form.control}
+                        name="priority"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Priority</FormLabel>
+                                <Select
+                                    onValueChange={field.onChange}
+                                    defaultValue={field.value}
+                                >
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select a priority type" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent className="flex flex-col space-y-1 sm:space-x-4 sm:flex-row">
+                                        <SelectItem value="low">Low</SelectItem>
+                                        <SelectItem value="medium">Medium</SelectItem>
+                                        <SelectItem value="high">High</SelectItem>
+                                        <SelectItem value="urgent">Urgent</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    {/* Status */}
+                    <FormField
+                        control={form.control}
+                        name="status"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Status</FormLabel>
+                                <Select
+                                    onValueChange={field.onChange}
+                                    defaultValue={field.value}
+                                >
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select a status type" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent className="flex flex-col space-y-1 sm:space-x-4 sm:flex-row">
+                                        {statusOptions.map((op) => (
+                                            <SelectItem key={op} value={op}>
+                                                <span className="capitalize">
+                                                    {op.replace("_", " ")}
+                                                </span>
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    {/* Recurrence */}
+                    <FormField
+                        control={form.control}
+                        name="recurrence"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Recurrence</FormLabel>
+                                <Select
+                                    onValueChange={field.onChange}
+                                    defaultValue={field.value}
+                                >
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select a recurrence type" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent className="flex flex-col space-y-1 sm:space-x-4 sm:flex-row">
+                                        {recurrenceOptions.map((op) => (
+                                            <SelectItem key={op} value={op}>
+                                                <span className="capitalize">
+                                                    {op.replace("_", " ")}
+                                                </span>
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+                {/* Due Date */}
+                <FormField
+                    control={form.control}
+                    name="dueDate"
+                    render={() => (
+                        <FormItem>
+                            <FormLabel>Due Date</FormLabel>
+                            <FormControl>
+                                <TaskDueDatePicker
+                                    dueDate={form.watch("dueDate")}
+                                    onChange={(date) => form.setValue("dueDate", date ?? null)}
+                                />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
 
-                    <CardContent className="space-y-3">
-                        <Input placeholder="Title" {...register("title")} />
-                        <p className="text-xs text-red-500">{errors.title?.message}</p>
-
-                        <textarea
-                            placeholder="Description"
-                            className="w-full p-2 border rounded"
-                            {...register("description")}
-                        />
-                        <p className="text-xs text-red-500">{errors.description?.message}</p>
-
-                        <select className="w-full p-2 border rounded" {...register("priority")}>
-                            <option value="low">Low</option>
-                            <option value="medium">Medium</option>
-                            <option value="high">High</option>
-                            <option value="urgent">Urgent</option>
-                        </select>
-
-                        <select className="w-full p-2 border rounded" {...register("status")}>
-                            <option value="pending">Pending</option>
-                            <option value="in_progress">In Progress</option>
-                            <option value="completed">Completed</option>
-                            <option value="archived">Archived</option>
-                        </select>
-
-                        <TaskDueDatePicker
-                            dueDate={watch("dueDate") ? watch("dueDate").toISOString() : undefined}
-
-                            onChange={(date) => setValue("dueDate", date)}
-                        />
-
-                    </CardContent>
-
-                    <CardFooter className="flex justify-end gap-2">
-                        <Button type="button" variant="destructive" onClick={() => setShowForm(false)}>
-                            Cancel
-                        </Button>
-                        <Button type="submit" variant="outline">
-                            {initialTask ? "Update Task" : "Save Task"}
-                        </Button>
-                    </CardFooter>
-                </Card>
+                <div className="flex justify-end space-x-3 pt-4 border-t">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsDialogOpen(false)}
+                    >
+                        Cancel
+                    </Button>
+                    <Button type="submit" variant="default" disabled={loading}>
+                        {loading && <Loader2 className="animate-spin" />}
+                        {initialTask ? "Update" : "Add"}
+                        {loading && "ing"} Task
+                    </Button>
+                </div>
             </form>
-        </div>
+        </Form>
     );
 };
 

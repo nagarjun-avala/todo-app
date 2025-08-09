@@ -10,7 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
-import { RegisterFormValues, registerSchema } from "@/lib/zodSchems";
+import { RegisterSchemaType, registerSchema } from "@/lib/zodSchems";
 import { Label } from "@/components/ui/label";
 import { registerUser } from "@/utils/controller";
 
@@ -27,7 +27,7 @@ const RegisterForm = () => {
         register,
         handleSubmit,
         formState: { errors },
-    } = useForm<RegisterFormValues>({
+    } = useForm<RegisterSchemaType>({
         resolver: zodResolver(registerSchema),
         defaultValues: {
             fullName: "",
@@ -38,7 +38,7 @@ const RegisterForm = () => {
         }
     });
 
-    const handleRegister = async (data: RegisterFormValues) => {
+    const handleRegister = async (data: RegisterSchemaType) => {
         setIsLoading(true);
         try {
             await registerUser(data); // uses postData internally

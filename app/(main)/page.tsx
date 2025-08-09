@@ -8,10 +8,10 @@ import TaskSummaryAnalytics from "@/components/task/TaskSummaryAnalytics";
 import WeeklyTrendsChart from "@/components/task/WeeklyTrendsChart";
 import ThemeModeToggle from "@/components/ThemeModeToggle";
 import { Button } from "@/components/ui/button";
-import { Menu, Plus } from "lucide-react";
+import { Loader, Menu, Plus } from "lucide-react";
 import TaskCalendar from "@/components/task/TaskCalendar";
 import { format } from "date-fns";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { motion } from 'framer-motion';
 import { Task } from "@prisma/client";
 import { getTasks } from "@/utils/controller";
@@ -30,11 +30,13 @@ const mockUser = {
 };
 
 export default function HomePage() {
-  const [showForm, setShowForm] = useState(false);
+
+  const [loadingTasks, setLoadingTasks] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const filteredTasks = useMemo(() => {
     if (!selectedDate) return tasks;
@@ -48,12 +50,16 @@ export default function HomePage() {
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoadingTasks(true)
       try {
         const res = await getTasks();
         setTasks(res);
       } catch {
+        setLoadingTasks(false)
         toast.error("Failed to fetch tasks")
         // console.error("Failed to fetch tasks:", error);
+      } finally {
+        setLoadingTasks(false)
       }
     };
 
@@ -78,25 +84,16 @@ export default function HomePage() {
       setTasks((prev) =>
         prev.map((task) =>
           task.id === taskToEdit.id
-            ? { ...task, ...taskData, updatedAt: new Date() }
+            ? { ...task, ...taskData, }
             : task
         )
       );
       setTaskToEdit(null);
     } else {
-      const newTask: Task = {
-        ...taskData,
-        id: crypto.randomUUID(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        completed: taskData.status === "completed",
-        deleted: false,
-        userId: mockUser.id,
-        user: mockUser,
-      } as Task;
+      const newTask: Task = taskData as Task;
       setTasks((prev) => [newTask, ...prev]);
     }
-    setShowForm(false);
+    setIsDialogOpen(false);
   };
 
   const onDeleteTask = (id: string) => {
@@ -126,11 +123,13 @@ export default function HomePage() {
           <span className="text-2xl font-bold">📋 To-Do Dashboard</span>
         </div>
         <div className="flex flex-wrap items-center gap-3">
+
+          {/* Add Task Button */}
           <Button
             variant={"outline"}
             onClick={() => {
               setTaskToEdit(null);
-              setShowForm(true);
+              setIsDialogOpen(true)
             }}
           >
             <Plus /> Add Task
@@ -152,35 +151,66 @@ export default function HomePage() {
 
         {/* RIGHT CONTENT */}
         <div className="flex-1 px-4 sm:px-6 py-4 space-y-6 overflow-y-auto">
-          {filteredTasks.length === 0 ? (
-            <div className="w-full flex items-center flex-col gap-5 justify-center min-h-[570px]">
-              {tasks.length === 0 ? "No Task Available" : "No Task for today"}
-              <Button
-                variant={"outline"}
-                onClick={() => {
-                  setTaskToEdit(null);
-                  setShowForm(true);
-                }}
-              >
-                <Plus /> Add Task
-              </Button>
-            </div>
-          ) :
+          {loadingTasks ?
             (
-              <>
-                <TaskBoard
-                  tasks={filteredTasks}
-                  onEditTask={(task) => {
-                    setTaskToEdit(task);
-                    setShowForm(true);
-                  }}
-                  onDeleteTask={onDeleteTask}
-                  onToggleComplete={onToggleComplete}
-                  setTasks={setTasks}
-                />
-                <WeeklyTrendsChart tasks={tasks} />
-              </>
-            )}
+              <div className="w-full flex items-center flex-col gap-5 justify-center min-h-[570px]">
+                <Loader className="animate-spin" /> Loading...
+              </div>
+            ) : filteredTasks.length === 0 ? (
+              <div className="w-full flex items-center flex-col gap-5 justify-center min-h-[570px]">
+                {tasks.length === 0 ? "No Task Available" : "No Task for today"}
+
+                {/* Add Task Dialog */}
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      onClick={() => {
+                        setTaskToEdit(null);
+                        setIsDialogOpen(true);
+                      }}
+                    >
+                      <Plus /> Add Task
+                    </Button>
+                  </DialogTrigger>
+
+                  <DialogContent className="w-full">
+                    <DialogHeader>
+                      <DialogTitle>
+                        {taskToEdit ? "Edit Task" : "Add Task"}
+                      </DialogTitle>
+                      <DialogDescription>
+                        {taskToEdit
+                          ? "Edit the selected task details"
+                          : "Add a new task you made recently"}
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    <TaskForm
+                      setIsDialogOpen={setIsDialogOpen}
+                      onAddTask={onAddTask}
+                      initialTask={taskToEdit || undefined}
+                    />
+
+                  </DialogContent>
+                </Dialog>
+              </div>
+            ) :
+              (
+                <>
+                  <TaskBoard
+                    tasks={filteredTasks}
+                    onEditTask={(task) => {
+                      setTaskToEdit(task);
+                      setIsDialogOpen(true);
+                    }}
+                    onDeleteTask={onDeleteTask}
+                    onToggleComplete={onToggleComplete}
+                    setTasks={setTasks}
+                  />
+                  <WeeklyTrendsChart tasks={tasks} />
+                </>
+              )}
 
           {/* FOOTER */}
           <footer className="text-center py-3 text-sm text-gray-600 border-t">
@@ -188,6 +218,7 @@ export default function HomePage() {
           </footer>
         </div>
       </main>
+
 
       {/* MOBILE SLIDE-IN SIDEBAR */}
       <Dialog open={sidebarOpen} onOpenChange={setSidebarOpen}>
@@ -221,15 +252,6 @@ export default function HomePage() {
           </motion.div>
         </DialogContent>
       </Dialog>
-
-      {/* MODAL FORM */}
-      {showForm && (
-        <TaskForm
-          setShowForm={setShowForm}
-          onAddTask={onAddTask}
-          initialTask={taskToEdit || undefined}
-        />
-      )}
     </div>
   );
 }

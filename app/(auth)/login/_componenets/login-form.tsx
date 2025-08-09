@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { LoginFormValues, loginSchema } from "@/lib/zodSchems";
+import { LoginSchemaType, loginSchema } from "@/lib/zodSchems";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Lock, LockOpen, Mail } from "lucide-react";
@@ -35,7 +35,7 @@ export function LoginForm({
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginFormValues>({
+  } = useForm<LoginSchemaType>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: '',
@@ -43,7 +43,7 @@ export function LoginForm({
     }
   });
 
-  const handleLogin = async (data: LoginFormValues) => {
+  const handleLogin = async (data: LoginSchemaType) => {
     setLoading(true);
     try {
       console.log(data)

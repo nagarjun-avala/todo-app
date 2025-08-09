@@ -3,18 +3,7 @@ import { cn } from "@/lib/utils";
 import React, { useMemo, useState } from "react";
 import TaskCard from "./task/TaskCard";
 import { Status, Task } from "@prisma/client";
-
-const STATUS_COLUMNS: {
-    key: Status;
-    label: string;
-    bgLight: string;
-    bgDark: string;
-}[] = [
-        { key: "pending", label: "Pending", bgLight: "bg-yellow-50", bgDark: "dark:bg-yellow-900/20" },
-        { key: "in_progress", label: "In Progress", bgLight: "bg-blue-50", bgDark: "dark:bg-blue-900/20" },
-        { key: "completed", label: "Completed", bgLight: "bg-green-50", bgDark: "dark:bg-green-900/20" },
-        { key: "archived", label: "Archived", bgLight: "bg-gray-100", bgDark: "dark:bg-gray-800" },
-    ];
+import { STATUS_COLUMNS } from "@/lib/constants";
 
 type Props = {
     tasks: Task[];
