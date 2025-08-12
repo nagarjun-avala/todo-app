@@ -1,5 +1,6 @@
 "use client";
 
+import { isSameDay, isAfter, isBefore } from "date-fns";
 import { useEffect, useMemo, useState } from "react";
 import TaskForm from "@/components/task/TaskForm";
 import TaskBoard from "@/components/TaskBoard";
@@ -10,43 +11,77 @@ import ThemeModeToggle from "@/components/ThemeModeToggle";
 import { Button } from "@/components/ui/button";
 import { Loader, Menu, Plus } from "lucide-react";
 import TaskCalendar from "@/components/task/TaskCalendar";
-import { format } from "date-fns";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { motion } from 'framer-motion';
-import { Task } from "@prisma/client";
-import { getTasks } from "@/utils/controller";
+import { Task, User } from "@prisma/client";
+import { deleteTask, getCurrentUser, getTasks } from "@/utils/controller";
 import { toast } from "sonner";
+import { isMonthlyOccurrence } from "@/utils/helper";
 
-
-const mockUser = {
+const mockUser: User = {
   id: "mock-user-id",
   fullName: "Mock User",
-  username: "mockuser",
   email: "mock@example.com",
   password: "",
+  lastLogin: null,
   isActive: true,
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
+  createdAt: new Date(),
+  updatedAt: new Date(),
 };
 
 export default function HomePage() {
-
   const [loadingTasks, setLoadingTasks] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date(Date.now()));
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
 
   const filteredTasks = useMemo(() => {
     if (!selectedDate) return tasks;
-    return tasks.filter(
-      (task) =>
-        task.dueDate &&
-        format(new Date(task.dueDate), "yyyy-MM-dd") ===
-        format(selectedDate, "yyyy-MM-dd")
-    )
+
+    return tasks.filter((task) => {
+      const createdAt = task.createdAt ? new Date(task.createdAt) : undefined;
+      const dueDate = task.dueDate ? new Date(task.dueDate) : undefined;
+      const baseDate = createdAt || dueDate || new Date();
+
+      switch (task.recurrence) {
+        case "none":
+          // Only appears if due date matches selected date
+          return !!dueDate && isSameDay(dueDate, selectedDate);
+
+        case "daily":
+          // Appears every day until dueDate (if set), else forever
+          return (
+            (isAfter(selectedDate, baseDate) || isSameDay(selectedDate, baseDate)) &&
+            (!dueDate || isBefore(selectedDate, dueDate) || isSameDay(selectedDate, dueDate))
+          );
+
+        case "weekly": {
+          // Appears on the same weekday as createdAt until dueDate (if set)
+          const sameWeekday =
+            baseDate.getDay() === selectedDate.getDay() &&
+            (isAfter(selectedDate, baseDate) || isSameDay(selectedDate, baseDate));
+
+          return sameWeekday && (!dueDate || isBefore(selectedDate, dueDate) || isSameDay(selectedDate, dueDate));
+        }
+
+        case "monthly": {
+          return (
+            isMonthlyOccurrence(baseDate, selectedDate) &&
+            (isAfter(selectedDate, baseDate) || isSameDay(selectedDate, baseDate)) &&
+            (!dueDate || isBefore(selectedDate, dueDate) || isSameDay(selectedDate, dueDate))
+          );
+        }
+
+        default:
+          return false;
+      }
+    });
   }, [tasks, selectedDate]);
+
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -54,6 +89,8 @@ export default function HomePage() {
       try {
         const res = await getTasks();
         setTasks(res);
+        const userData = await getCurrentUser()
+        setUser(userData ?? mockUser)
       } catch {
         setLoadingTasks(false)
         toast.error("Failed to fetch tasks")
@@ -97,6 +134,8 @@ export default function HomePage() {
   };
 
   const onDeleteTask = (id: string) => {
+    deleteTask(id)
+    console.log(id)
     setTasks((prev) => prev.filter((task) => task.id !== id));
   };
 
@@ -123,19 +162,42 @@ export default function HomePage() {
           <span className="text-2xl font-bold">📋 To-Do Dashboard</span>
         </div>
         <div className="flex flex-wrap items-center gap-3">
+          {/* Add Task Dialog */}
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button
+                variant={"outline"}
+                onClick={() => {
+                  setTaskToEdit(null);
+                  setIsDialogOpen(true);
+                }}
+              >
+                <Plus /> Add Task
+              </Button>
+            </DialogTrigger>
 
-          {/* Add Task Button */}
-          <Button
-            variant={"outline"}
-            onClick={() => {
-              setTaskToEdit(null);
-              setIsDialogOpen(true)
-            }}
-          >
-            <Plus /> Add Task
-          </Button>
+            <DialogContent className="w-full">
+              <DialogHeader>
+                <DialogTitle>
+                  {taskToEdit ? "Edit Task" : "Add Task"}
+                </DialogTitle>
+                <DialogDescription>
+                  {taskToEdit
+                    ? "Edit the selected task details"
+                    : "Add a new task you made recently"}
+                </DialogDescription>
+              </DialogHeader>
+
+              <TaskForm
+                setIsDialogOpen={setIsDialogOpen}
+                onAddTask={onAddTask}
+                initialTask={taskToEdit || undefined}
+              />
+
+            </DialogContent>
+          </Dialog>
           <span className="text-sm text-gray-600 dark:text-gray-300">
-            Welcome, {mockUser.fullName}
+            Welcome, {user?.fullName ?? "User"}
           </span>
           <ThemeModeToggle />
         </div>
@@ -144,56 +206,32 @@ export default function HomePage() {
       {/* MAIN CONTENT */}
       <main className="flex flex-1 flex-col lg:flex-row overflow-hidden">
         {/* LEFT SIDEBAR - desktop only */}
-        <aside className="hidden lg:block lg:w-1/4 xl:w-1/5 border-r overflow-y-auto p-4 sticky space-y-4">
+        <aside className="hidden lg:block lg:w-1/4 xl:w-2/9 border-r overflow-y-auto p-4 sticky space-y-4">
           <TaskSummaryAnalytics tasks={filteredTasks} />
-          <TaskCalendar tasks={tasks} onDateSelect={setSelectedDate} />
+          <TaskCalendar tasks={tasks} setSelectedDate={setSelectedDate} selectedDate={selectedDate} />
         </aside>
 
         {/* RIGHT CONTENT */}
         <div className="flex-1 px-4 sm:px-6 py-4 space-y-6 overflow-y-auto">
           {loadingTasks ?
             (
-              <div className="w-full flex items-center flex-col gap-5 justify-center min-h-[570px]">
+              <div className="w-full flex items-center gap-2 justify-center min-h-[570px]">
                 <Loader className="animate-spin" /> Loading...
               </div>
             ) : filteredTasks.length === 0 ? (
               <div className="w-full flex items-center flex-col gap-5 justify-center min-h-[570px]">
                 {tasks.length === 0 ? "No Task Available" : "No Task for today"}
 
-                {/* Add Task Dialog */}
-                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      onClick={() => {
-                        setTaskToEdit(null);
-                        setIsDialogOpen(true);
-                      }}
-                    >
-                      <Plus /> Add Task
-                    </Button>
-                  </DialogTrigger>
-
-                  <DialogContent className="w-full">
-                    <DialogHeader>
-                      <DialogTitle>
-                        {taskToEdit ? "Edit Task" : "Add Task"}
-                      </DialogTitle>
-                      <DialogDescription>
-                        {taskToEdit
-                          ? "Edit the selected task details"
-                          : "Add a new task you made recently"}
-                      </DialogDescription>
-                    </DialogHeader>
-
-                    <TaskForm
-                      setIsDialogOpen={setIsDialogOpen}
-                      onAddTask={onAddTask}
-                      initialTask={taskToEdit || undefined}
-                    />
-
-                  </DialogContent>
-                </Dialog>
+                {/* Add Task Button */}
+                <Button
+                  variant={"outline"}
+                  onClick={() => {
+                    setTaskToEdit(null);
+                    setIsDialogOpen(true)
+                  }}
+                >
+                  <Plus />Add Task
+                </Button>
               </div>
             ) :
               (
@@ -247,7 +285,7 @@ export default function HomePage() {
 
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               <TaskSummaryAnalytics tasks={filteredTasks} />
-              <TaskCalendar tasks={tasks} onDateSelect={setSelectedDate} />
+              <TaskCalendar tasks={tasks} setSelectedDate={setSelectedDate} selectedDate={selectedDate} />
             </div>
           </motion.div>
         </DialogContent>

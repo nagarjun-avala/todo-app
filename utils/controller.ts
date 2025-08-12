@@ -1,5 +1,5 @@
-import { Task } from "@prisma/client";
-import { getData, patchData, postData } from "./api";
+import { Task, User } from "@prisma/client";
+import { deleteData, getData, patchData, postData } from "./api";
 
 /**
  * Logs out the current user.
@@ -67,6 +67,15 @@ export const loginUser = async (credentials: {
     }
 };
 
+export async function getCurrentUser() {
+    try {
+        const res = await getData("/api/auth");
+        return res as User;
+    } catch (error) {
+        console.error(error)
+        throw new Error("Unauthorized");
+    }
+}
 
 export const getTasks = async () => {
     try {
@@ -76,7 +85,6 @@ export const getTasks = async () => {
         throw new Error("Falied to fetch data")
     }
 }
-
 
 /**
  * Creates or updates a task based on the presence of an `id`.
@@ -106,3 +114,14 @@ export const createOrUpdateTask = async (
         );
     }
 };
+
+export const deleteTask = async (id: string) => {
+    try {
+        await deleteData(`/api/task/${id}`);
+        return true;
+    } catch {
+        throw new Error(
+            "Failed to delete task"
+        );
+    }
+}

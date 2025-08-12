@@ -16,7 +16,8 @@ export async function GET() {
 
         const tasks = await db.task.findMany({
             where: {
-                userId: session?.id
+                userId: session?.id,
+                deleted: false,
             },
             orderBy: { createdAt: "desc" },
         });

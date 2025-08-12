@@ -2,7 +2,6 @@
 
 import { jwtVerify, SignJWT } from "jose";
 import { SessionPayload } from "./types";
-import { db } from "./db";
 import { cookies } from "next/headers";
 
 
@@ -32,18 +31,4 @@ export async function decrypt(token: string) {
 export async function getServerSession() {
     const token = (await cookies()).get("token")?.value;
     return token ? decrypt(token) : null;
-}
-
-export async function getCurrentUser() {
-    const session = await getServerSession();
-    if (!session?.id) return null;
-
-    const user = await db.user.findUnique({
-        where: { id: session.id as string },
-        omit: {
-            password: true
-        }
-    });
-
-    return user;
 }

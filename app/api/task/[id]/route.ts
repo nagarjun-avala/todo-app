@@ -82,7 +82,7 @@ export async function DELETE(req: Request) {
         const url = new URL(req.url);
         const id = url.pathname.split("/").pop();
         if (!id) {
-            return NextResponse.json({ error: "Missing transaction ID" }, { status: 400 });
+            return NextResponse.json({ error: "Missing task ID" }, { status: 400 });
         }
 
         const session = await getServerSession()
@@ -108,7 +108,7 @@ export async function DELETE(req: Request) {
 
         return new NextResponse(null, { status: 204 }); // No Content
     } catch (error) {
-        console.error("❌ Failed to delete transaction:", error);
+        console.error("❌ Failed to delete task:", error);
         return NextResponse.json(
             { error: "Internal server error" },
             { status: 500 }

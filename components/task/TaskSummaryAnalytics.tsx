@@ -1,8 +1,8 @@
-import { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { CalendarCheck2, Repeat, ClipboardList, AlarmClock } from "lucide-react";
 import { JSX } from "react";
 import { Card } from "../ui/card";
+import { Task } from "@prisma/client";
 
 interface Props {
     tasks: Task[];
@@ -11,10 +11,10 @@ interface Props {
 export default function TaskSummaryAnalytics({ tasks }: Props) {
 
     const total = tasks.length;
-    const completed = tasks.filter((t) => t.completed).length;
+    const completed = tasks.filter((t) => t.status === "completed").length;
     const recurring = tasks.filter((t) => t.recurrence && t.recurrence !== "none").length;
     const overdue = tasks.filter(
-        (t) => t.dueDate && !t.completed && new Date(t.dueDate) < new Date()
+        (t) => t.dueDate && t.status !== "completed" && new Date(t.dueDate) < new Date()
     ).length;
 
     const summaryCard = (

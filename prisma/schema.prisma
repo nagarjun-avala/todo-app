@@ -49,6 +49,7 @@ model Task {
   status      Status     @default(pending)
   priority    Priority   @default(medium)
   category    String?    @default("general")
+  startDate   DateTime?
   dueDate     DateTime?
   deleted     Boolean    @default(false)
   recurrence  Recurrence @default(none)
