@@ -27,8 +27,9 @@ const TaskCard = ({ task, onEdit, onDelete, onToggleComplete, onToggleRecurrence
 
     const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
         if (info.offset.x > 100) {
-            onToggleComplete("complted");
-        } else if (info.offset.x < -100) {
+            onToggleComplete("completed"); // ✅ fix spelling
+        }
+        else if (info.offset.x < -100) {
             onDelete();
         } else {
             controls.start({ x: 0 });
