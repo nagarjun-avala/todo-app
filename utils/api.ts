@@ -27,9 +27,6 @@ function buildUrl(url: string, queryParams?: QueryParams): string {
  * @returns Parsed JSON data of generic type T
  * @throws Error if response is not OK
  */
-/**
- * Handles axios response, throwing error if not OK.
- */
 function handleResponse<T>(res: { data: T }): T {
   return res.data;
 }
