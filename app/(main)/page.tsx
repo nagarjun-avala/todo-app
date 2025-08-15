@@ -161,7 +161,7 @@ export default function HomePage() {
           >
             <Menu className="w-5 h-5" />
           </button>
-          <span className="text-2xl font-bold">📋 To-Do Dashboard</span>
+          <span className="text-2xl font-bold">📋 Zentra Dashboard</span>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {/* Add Task Dialog */}
