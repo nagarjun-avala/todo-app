@@ -4,7 +4,7 @@ export async function GET() {
     const res = NextResponse.json({ success: true });
 
     res.cookies.set({
-        name: "token",
+        name: "todo-token",
         value: "",
         path: "/",
         maxAge: 0, // expires immediately

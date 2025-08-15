@@ -43,10 +43,7 @@ export async function POST(req: NextRequest) {
     try {
         const { dueDate, ...body } = await req.json();
 
-        console.log("Passed body initialization")
         const parsed = taskSchema.safeParse(body);
-
-        console.log("Passed schema validation")
 
         if (!parsed.success) {
             return NextResponse.json(

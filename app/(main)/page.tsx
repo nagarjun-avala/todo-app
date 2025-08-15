@@ -17,10 +17,12 @@ import { Task, User } from "@prisma/client";
 import { deleteTask, getCurrentUser, getTasks } from "@/utils/controller";
 import { toast } from "sonner";
 import { isMonthlyOccurrence } from "@/utils/helper";
+import HeaderUser from "@/components/header-user";
 
 const mockUser: User = {
   id: "mock-user-id",
   fullName: "Mock User",
+  avatar: "",
   email: "mock@example.com",
   password: "",
   lastLogin: null,
@@ -87,10 +89,10 @@ export default function HomePage() {
     const fetchData = async () => {
       setLoadingTasks(true)
       try {
-        const res = await getTasks();
-        setTasks(res);
         const userData = await getCurrentUser()
         setUser(userData ?? mockUser)
+        const res = await getTasks();
+        setTasks(res);
       } catch {
         setLoadingTasks(false)
         toast.error("Failed to fetch tasks")
@@ -196,10 +198,8 @@ export default function HomePage() {
 
             </DialogContent>
           </Dialog>
-          <span className="text-sm text-gray-600 dark:text-gray-300">
-            Welcome, {user?.fullName ?? "User"}
-          </span>
           <ThemeModeToggle />
+          <HeaderUser user={user} />
         </div>
       </header>
 

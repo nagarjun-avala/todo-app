@@ -1,11 +1,12 @@
-import { cookies } from "next/headers";
-import { decrypt } from "@/lib/session";
+import { getServerSession } from "@/lib/session";
 import { db } from "@/lib/db";
-import { SessionPayload } from "@/lib/types";
+import { NextResponse } from "next/server";
 
 export async function GET() {
-    const token = (await cookies()).get("token")?.value;
-    const session: SessionPayload | null = token ? await decrypt(token) : null;
+    const session = await getServerSession()
+    if (!session) {
+        return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 })
+    }
     const user = await db.user.findUnique({
         where: { id: session?.id as string },
         omit: {
