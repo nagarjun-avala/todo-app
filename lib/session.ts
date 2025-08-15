@@ -29,6 +29,6 @@ export async function decrypt(token: string) {
 }
 
 export async function getServerSession() {
-    const token = (await cookies()).get("token")?.value;
+    const token = (await cookies()).get("todo-token")?.value;
     return token ? decrypt(token) : null;
 }

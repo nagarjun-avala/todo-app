@@ -1,10 +1,11 @@
-import { Task } from "@/lib/types";
+
+import { Task } from "@prisma/client";
 import { addDays, addWeeks, addMonths, isBefore, parseISO } from "date-fns";
 
 export function generateNextRecurringTask(task: Task): Task | null {
     if (!task.recurrence || task.recurrence === "none" || !task.dueDate) return null;
 
-    const lastDueDate = parseISO(task.dueDate);
+    const lastDueDate = parseISO(task.dueDate.toString());
     let nextDueDate: Date;
 
     switch (task.recurrence) {
@@ -27,10 +28,10 @@ export function generateNextRecurringTask(task: Task): Task | null {
         return {
             ...task,
             id: crypto.randomUUID(), // you may use uuid or nanoid
-            completed: false,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            dueDate: nextDueDate.toISOString(),
+            status: "pending",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            dueDate: nextDueDate,
         };
     }
 

@@ -19,6 +19,7 @@ import { LoginSchemaType, loginSchema } from "@/lib/zodSchems";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Lock, LockOpen, Mail } from "lucide-react";
+import { loginUser } from "@/utils/controller";
 
 export function LoginForm({
   className,
@@ -46,12 +47,12 @@ export function LoginForm({
   const handleLogin = async (data: LoginSchemaType) => {
     setLoading(true);
     try {
-      console.log(data)
-      // await loginUser(data); // uses postData internally
+      await loginUser(data); // uses postData internally
       toast.success("Logged in successfully!");
       router.push(callbackUrl); // or navigate where needed
     } catch (err: unknown) {
       if (err instanceof Error) {
+        toast.error(err.message);
         console.error(err.message);
       } else {
         toast.error("Login failed");

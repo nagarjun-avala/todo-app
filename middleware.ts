@@ -18,7 +18,7 @@ export async function middleware(req: NextRequest) {
     const isPublic = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
     if (isPublic) return NextResponse.next();
 
-    const token = req.cookies.get("token")?.value;
+    const token = req.cookies.get("todo-token")?.value;
 
     if (!token) {
         const loginUrl = new URL("/login", req.url);

@@ -4,6 +4,7 @@ import React, { useMemo, useState } from "react";
 import TaskCard from "./task/TaskCard";
 import { Status, Task } from "@prisma/client";
 import { STATUS_COLUMNS } from "@/lib/constants";
+import { createOrUpdateTask } from "@/utils/controller";
 
 type Props = {
     tasks: Task[];
@@ -38,15 +39,19 @@ export default function TaskBoard({
         setDraggedItem({ columnId, task });
     };
 
-    const handleDrop = (e: React.DragEvent, targetColumnId: string) => {
+    const handleDrop = async (e: React.DragEvent, targetColumnId: Status) => {
         e.preventDefault();
         if (!draggedItem || draggedItem.columnId === targetColumnId) return;
 
         setTasks((prevTasks) =>
             prevTasks.map((t) =>
-                t.id === draggedItem.task.id ? { ...t, status: targetColumnId as Status } : t
+                t.id === draggedItem.task.id ? { ...t, status: targetColumnId } : t
             )
         );
+        await createOrUpdateTask({
+            ...draggedItem.task,
+            status: targetColumnId
+        })
         setDraggedItem(null);
     };
 

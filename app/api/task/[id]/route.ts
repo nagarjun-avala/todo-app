@@ -14,7 +14,7 @@ export async function PATCH(request: Request) {
         }
 
         // ⛏️ parse the incoming JSON
-        const body = await request.json();
+        const { dueDate, ...body } = await request.json();
 
         // 🧪 Validate only the fields being sent
 
@@ -38,7 +38,6 @@ export async function PATCH(request: Request) {
             status,
             priority,
             category,
-            dueDate,
             recurrence, } = body;
 
         const session = await getServerSession()
