@@ -1,9 +1,10 @@
-import { Task } from "@/lib/types";
-import { format, subDays, isSameDay, parseISO } from "date-fns";
+
+import { format, subDays, isSameDay } from "date-fns";
 import { XAxis, CartesianGrid, AreaChart, Area } from "recharts";
 import { ChartConfig, ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from "../ui/chart";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import React from "react";
+import { Task } from "@prisma/client";
 
 interface Props {
     tasks: Task[];
@@ -26,9 +27,9 @@ const getWeeklyData = (tasks: Task[]) => {
 
         const count = tasks.filter(
             (t) =>
-                t.completed &&
+                t.status === "completed" &&
                 t.updatedAt &&
-                isSameDay(parseISO(t.updatedAt), day)
+                isSameDay(t.updatedAt, day)
         ).length;
 
         return { day: label, completed: count };
