@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 
 export async function GET() {
-    return NextResponse.json({ success: true }).cookies.set({
+    const res = NextResponse.json({ success: true });
+
+    res.cookies.set({
         name: "token",
         value: "",
         path: "/",
@@ -10,4 +12,6 @@ export async function GET() {
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
     });
+
+    return res;
 }
